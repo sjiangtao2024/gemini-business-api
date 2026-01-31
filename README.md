@@ -12,7 +12,8 @@ Multi-API compatibility layer for Gemini Business (OpenAI/Gemini/Claude formats)
 - **30-Day Lifecycle**: Automatic account expiry detection and warnings
 - **Hot Reload**: Configuration changes without service restart
 - **Streaming SSE**: Real-time response streaming
-- **Multimodal Support**: Image/video input (Phase 2)
+- **Multimodal Support**: Image/video input (URL + Base64)
+- **Web Management UI**: Real-time monitoring and account management
 - **Docker Ready**: Optimized for Raspberry Pi 5
 
 ## 📋 Requirements
@@ -47,7 +48,11 @@ cp config/accounts.json.example config/accounts.json
 uvicorn app.main:app --reload --port 8000
 ```
 
-Visit: http://localhost:8000/docs
+### Access Services
+
+- **API Documentation**: http://localhost:8000/docs
+- **Management UI**: http://localhost:8000/static/admin.html
+- **Health Check**: http://localhost:8000/health
 
 ### Docker Deployment
 
@@ -130,7 +135,43 @@ mypy app/
 ### OpenAI Compatible
 
 ```bash
+# Chat completions (streaming/non-streaming)
 POST /v1/chat/completions
+
+# List available models
+GET /v1/models
+```
+
+### Gemini Native API
+
+```bash
+# Generate content
+POST /v1beta/models/{model}:generateContent
+
+# List models
+GET /v1beta/models
+```
+
+### Claude Compatible
+
+```bash
+# Create messages (streaming/non-streaming)
+POST /v1/messages
+```
+
+### Admin Management API
+
+```bash
+# Account management
+GET /admin/accounts          # List all accounts with status
+POST /admin/accounts         # Add new account
+DELETE /admin/accounts/{email}  # Delete account
+
+# Statistics
+GET /admin/stats             # Get pool statistics
+
+# Real-time logs
+GET /admin/logs/stream       # SSE log streaming
 ```
 
 ### Health Check
@@ -147,6 +188,37 @@ GET /
 - **30-Day Lifecycle**: Auto-detect trial expiry, < 3 days warning
 - **Hot Reload**: Watchdog-based config monitoring
 
+## 🖥️ Management Interface
+
+Access the web-based management UI at: `http://localhost:8000/static/admin.html`
+
+### Features
+
+**Dashboard**
+- Real-time statistics (total/active/cooldown/expired accounts)
+- Visual charts (account status distribution, success rate)
+- Auto-refresh every 5 seconds
+
+**Accounts Management**
+- View all accounts with status and remaining days
+- Add new accounts (modal form with validation)
+- Delete accounts (with confirmation)
+- Status indicators: 🟢 Active / 🟡 Cooldown / 🔴 Expired
+- Expiry warnings: Red (<3 days), Yellow (<7 days)
+
+**Real-time Logs**
+- Live log streaming via Server-Sent Events (SSE)
+- Log level filtering (ALL/INFO/WARNING/ERROR)
+- Auto-scroll to latest entries
+- Color-coded by severity
+
+### Tech Stack
+
+- **Frontend**: Vanilla JavaScript (no build tools required)
+- **Styling**: Tailwind CSS (CDN)
+- **Charts**: Chart.js (CDN)
+- **Real-time**: Server-Sent Events (SSE)
+
 ## 📖 Documentation
 
 See `docs/` directory for detailed design documents:
@@ -161,9 +233,9 @@ See `docs/` directory for detailed design documents:
 
 ## 🗺️ Roadmap
 
-- [x] **Phase 1**: Core API (Token Manager, Account Pool, OpenAI compatibility)
-- [ ] **Phase 2**: Streaming SSE + Multimodal (image/video input)
-- [ ] **Phase 3**: Frontend management interface
+- [x] **Phase 1**: Core API (Token Manager, Account Pool, OpenAI compatibility) ✅
+- [x] **Phase 2**: Streaming SSE + Multimodal (image/video input, multi-API formats) ✅
+- [x] **Phase 3**: Frontend management interface (real-time monitoring, account CRUD) ✅
 - [ ] **Phase 4**: Image/video generation (optional)
 
 ## 📄 License
