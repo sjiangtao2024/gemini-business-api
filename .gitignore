@@ -60,7 +60,12 @@ data/expired/
 *.bak
 *.swp
 .cache/
+
+# Local development files (not for version control)
 CLAUDE.md
 finding.md
 progress.md
 task_plan.md
+
+# Agent rules (local symlink, not portable)
+agent-rules/
