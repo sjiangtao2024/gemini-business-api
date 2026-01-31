@@ -19,7 +19,7 @@ from app.core.error_handlers import (
     httpx_exception_handler,
     validation_exception_handler,
 )
-from app.routes import chat, status, openai
+from app.routes import chat, status, openai, gemini, claude
 
 # Configure logging
 logging.basicConfig(
@@ -57,6 +57,8 @@ app.add_middleware(
 app.include_router(chat.router)
 app.include_router(status.router)
 app.include_router(openai.router)  # OpenAI 兼容 API
+app.include_router(gemini.router)  # Gemini 原生格式 API
+app.include_router(claude.router)  # Claude 兼容 API
 
 
 @app.on_event("startup")
@@ -78,6 +80,8 @@ async def startup_event():
         chat.set_account_pool(pool)
         status.set_account_pool(pool)
         openai.set_account_pool(pool)  # OpenAI API 路由
+        gemini.set_account_pool(pool)  # Gemini API 路由
+        claude.set_account_pool(pool)  # Claude API 路由
 
         logger.info(f"✅ Initialized with {len(accounts)} account(s)")
         logger.info(f"📊 Pool status: {pool.get_pool_status()}")
@@ -104,6 +108,9 @@ async def root():
         "endpoints": {
             "openai_chat": "/v1/chat/completions",
             "openai_models": "/v1/models",
+            "gemini_generate": "/v1beta/models/{model}:generateContent",
+            "gemini_models": "/v1beta/models",
+            "claude_messages": "/v1/messages",
             "chat": "/api/v1/chat/send",
             "upload": "/api/v1/chat/upload",
             "health": "/api/v1/status/health",
