@@ -19,7 +19,7 @@ from app.core.error_handlers import (
     httpx_exception_handler,
     validation_exception_handler,
 )
-from app.routes import chat, status, openai, gemini, claude
+from app.routes import chat, status, openai, gemini, claude, admin
 
 # Configure logging
 logging.basicConfig(
@@ -59,6 +59,7 @@ app.include_router(status.router)
 app.include_router(openai.router)  # OpenAI 兼容 API
 app.include_router(gemini.router)  # Gemini 原生格式 API
 app.include_router(claude.router)  # Claude 兼容 API
+app.include_router(admin.router)  # 管理界面 API
 
 
 @app.on_event("startup")
@@ -82,6 +83,7 @@ async def startup_event():
         openai.set_account_pool(pool)  # OpenAI API 路由
         gemini.set_account_pool(pool)  # Gemini API 路由
         claude.set_account_pool(pool)  # Claude API 路由
+        admin.set_account_pool(pool)  # 管理界面 API 路由
 
         logger.info(f"✅ Initialized with {len(accounts)} account(s)")
         logger.info(f"📊 Pool status: {pool.get_pool_status()}")
