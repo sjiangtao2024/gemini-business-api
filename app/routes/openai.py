@@ -14,6 +14,7 @@ from pydantic import BaseModel, Field
 from app.core.account_pool import AccountPool
 from app.core.gemini_client import GeminiClient
 from app.utils.streaming import stream_gemini_response
+from app.utils.multimodal import GeminiMultimodalFormatter
 
 logger = logging.getLogger(__name__)
 
@@ -30,10 +31,41 @@ def set_account_pool(pool: AccountPool) -> None:
 
 
 # OpenAI 兼容的请求/响应模型
+class ImageUrl(BaseModel):
+    """图片 URL"""
+    url: str = Field(..., description="图片 URL 或 Base64 Data URI")
+    detail: Optional[str] = Field("auto", description="图片详细程度：low/high/auto")
+
+
+class ContentPart(BaseModel):
+    """消息内容部分（支持多模态）"""
+    type: str = Field(..., description="内容类型：text/image_url")
+    text: Optional[str] = Field(None, description="文本内容")
+    image_url: Optional[ImageUrl] = Field(None, description="图片 URL")
+
+
 class Message(BaseModel):
-    """聊天消息"""
+    """聊天消息（支持多模态）"""
     role: str = Field(..., description="角色：system/user/assistant")
-    content: str = Field(..., description="消息内容")
+    content: Union[str, List[ContentPart]] = Field(..., description="消息内容（文本或多模态）")
+
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "role": "user",
+                    "content": "Hello"
+                },
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": "What's in this image?"},
+                        {"type": "image_url", "image_url": {"url": "https://example.com/image.jpg"}}
+                    ]
+                }
+            ]
+        }
+    }
 
 
 class ChatCompletionRequest(BaseModel):
@@ -116,17 +148,34 @@ async def create_chat_completion(request: ChatCompletionRequest):
             detail=f"No available accounts: {str(e)}",
         )
 
-    # 提取最后一条用户消息
-    user_message = ""
+    # 提取最后一条用户消息（支持多模态）
+    user_message_content = None
     for msg in reversed(request.messages):
         if msg.role == "user":
-            user_message = msg.content
+            user_message_content = msg.content
             break
 
-    if not user_message:
+    if not user_message_content:
         raise HTTPException(
             status_code=400,
             detail="No user message found in messages list"
+        )
+
+    # 处理多模态内容
+    try:
+        gemini_message = await GeminiMultimodalFormatter.process_multimodal_content(
+            user_message_content
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid multimodal content: {str(e)}"
+        )
+    except Exception as e:
+        logger.error(f"Failed to process multimodal content: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to process multimodal content: {str(e)}"
         )
 
     # 发送消息到 Gemini
