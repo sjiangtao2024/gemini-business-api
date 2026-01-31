@@ -9,6 +9,7 @@ import logging
 from fastapi import FastAPI, HTTPException
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 import httpx
 
 from app.config import ConfigLoader
@@ -60,6 +61,9 @@ app.include_router(openai.router)  # OpenAI 兼容 API
 app.include_router(gemini.router)  # Gemini 原生格式 API
 app.include_router(claude.router)  # Claude 兼容 API
 app.include_router(admin.router)  # 管理界面 API
+
+# Mount static files for admin UI
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
 @app.on_event("startup")
