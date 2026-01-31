@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  gemini-api:
+    build: .
+    container_name: gemini-business-api
+    restart: unless-stopped
+
+    ports:
+      - "8000:8000"
+
+    volumes:
+      # 配置文件（支持热重载）
+      - ./config:/app/config
+
+      # 日志持久化（可选）
+      - ./logs:/app/logs
+
+    environment:
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - API_KEY=${API_KEY:-}
+      - IMAGE_OUTPUT_FORMAT=${IMAGE_OUTPUT_FORMAT:-url}
+      - VIDEO_OUTPUT_FORMAT=${VIDEO_OUTPUT_FORMAT:-html}
+
+    # 资源限制（Raspberry Pi 5 优化）
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+
+    # 健康检查
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+    # 日志配置
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+# 网络配置
+networks:
+  default:
+    name: gemini-api-network
