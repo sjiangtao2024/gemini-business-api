@@ -1,0 +1,27 @@
+{
+  "accounts": [
+    {
+      "email": "gemini1@example.com",
+      "team_id": "1d468dcc-11a5-4adc-8b68-8098e227000c",
+      "secure_c_ses": "your-secure-c-ses-cookie-value",
+      "host_c_oses": "your-host-c-oses-cookie-value",
+      "csesidx": "206226908",
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+      "created_at": "2025-01-31T10:00:00Z",
+      "expires_at": "2025-03-02T10:00:00Z"
+    },
+    {
+      "email": "gemini2@example.com",
+      "team_id": "2e579ecc-22b6-5bdc-9c79-9109f338111d",
+      "secure_c_ses": "another-secure-c-ses-cookie-value",
+      "host_c_oses": "another-host-c-oses-cookie-value",
+      "csesidx": "306337019",
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+      "created_at": "2025-01-31T12:00:00Z"
+    }
+  ],
+  "settings": {
+    "account_expiry_days": 30,
+    "expiry_warning_days": 3
+  }
+}
