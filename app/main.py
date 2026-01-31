@@ -6,11 +6,19 @@ Multi-API compatibility layer for Gemini Business (OpenAI/Gemini/Claude formats)
 
 import logging
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+import httpx
 
 from app.config import ConfigLoader
 from app.core.account_pool import AccountPool
+from app.core.error_handlers import (
+    general_exception_handler,
+    http_exception_handler,
+    httpx_exception_handler,
+    validation_exception_handler,
+)
 from app.routes import chat, status
 
 # Configure logging
@@ -28,6 +36,13 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc",
 )
+
+# Register exception handlers
+app.add_exception_handler(HTTPException, http_exception_handler)
+app.add_exception_handler(httpx.HTTPStatusError, httpx_exception_handler)
+app.add_exception_handler(httpx.RequestError, httpx_exception_handler)
+app.add_exception_handler(RequestValidationError, validation_exception_handler)
+app.add_exception_handler(Exception, general_exception_handler)
 
 # CORS middleware
 app.add_middleware(
