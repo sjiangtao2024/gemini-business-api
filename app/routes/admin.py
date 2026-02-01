@@ -173,8 +173,12 @@ async def list_accounts():
             email=account.email,
             team_id=account.team_id,
             status=status,
-            created_at=account.created_at,
-            expires_at=account.expires_at,
+            created_at=datetime.fromtimestamp(
+                account.created_at, tz=timezone.utc
+            ).isoformat(),
+            expires_at=datetime.fromtimestamp(
+                account.expires_at, tz=timezone.utc
+            ).isoformat() if account.expires_at else None,
             remaining_days=remaining_days,
             last_used_at=last_used_at,
             cooldown_until=cooldown_until,
