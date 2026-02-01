@@ -17,6 +17,10 @@ services:
       # 日志持久化（可选）
       - ./logs:/app/logs
 
+      # 开发环境：挂载代码目录（修改后重启即生效）
+      - ./app:/app/app
+      - ./static:/app/static
+
     environment:
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
       - API_KEY=${API_KEY:-}
