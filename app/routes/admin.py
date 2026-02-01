@@ -155,7 +155,7 @@ async def list_accounts():
 
         # 获取冷却结束时间
         cooldown_until = None
-        if account.cooldown_until is not None:
+        if account.cooldown_until > 0:
             cooldown_until = datetime.fromtimestamp(
                 account.cooldown_until,
                 tz=timezone.utc
