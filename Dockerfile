@@ -14,6 +14,7 @@ RUN pip install --no-cache-dir uv
 # 复制依赖文件
 COPY pyproject.toml .
 COPY .python-version .
+COPY README.md .
 
 # 创建虚拟环境并安装依赖
 RUN uv venv && \
