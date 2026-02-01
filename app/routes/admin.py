@@ -163,9 +163,9 @@ async def list_accounts():
 
         # 获取最后使用时间
         last_used_at = None
-        if account.last_used is not None:
+        if account.last_used_at > 0:
             last_used_at = datetime.fromtimestamp(
-                account.last_used,
+                account.last_used_at,
                 tz=timezone.utc
             ).isoformat()
 
@@ -178,8 +178,8 @@ async def list_accounts():
             remaining_days=remaining_days,
             last_used_at=last_used_at,
             cooldown_until=cooldown_until,
-            total_requests=account_pool.request_count.get(account.email, 0),
-            failed_requests=account_pool.error_count.get(account.email, 0)
+            total_requests=account.request_count,
+            failed_requests=account.error_count
         ))
 
     return accounts_status
