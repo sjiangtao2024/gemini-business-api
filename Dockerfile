@@ -23,6 +23,9 @@ RUN uv venv && \
 # 复制应用代码
 COPY app/ ./app/
 
+# 复制静态文件（前端管理界面）
+COPY static/ ./static/
+
 # 暴露端口
 EXPOSE 8000
 
