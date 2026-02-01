@@ -3,6 +3,7 @@ version: '3.8'
 services:
   gemini-api:
     build: .
+    image: gemini-business-api:latest
     container_name: gemini-business-api
     restart: unless-stopped
 
