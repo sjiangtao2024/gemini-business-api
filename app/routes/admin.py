@@ -143,29 +143,29 @@ async def list_accounts():
 
     for account in account_pool.accounts:
         # 计算剩余天数
-        remaining_days = account_pool.get_remaining_days(account)
+        remaining_days = account.get_remaining_days()
 
         # 判断状态
-        if account_pool.is_expired(account):
+        if account.is_expired():
             status = "expired"
-        elif account_pool.is_in_cooldown(account):
+        elif account.is_in_cooldown():
             status = "cooldown"
         else:
             status = "active"
 
         # 获取冷却结束时间
         cooldown_until = None
-        if account.email in account_pool.cooldown_until:
+        if account.cooldown_until is not None:
             cooldown_until = datetime.fromtimestamp(
-                account_pool.cooldown_until[account.email],
+                account.cooldown_until,
                 tz=timezone.utc
             ).isoformat()
 
         # 获取最后使用时间
         last_used_at = None
-        if account.email in account_pool.last_used:
+        if account.last_used is not None:
             last_used_at = datetime.fromtimestamp(
-                account_pool.last_used[account.email],
+                account.last_used,
                 tz=timezone.utc
             ).isoformat()
 
