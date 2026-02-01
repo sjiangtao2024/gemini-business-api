@@ -326,16 +326,16 @@ async def get_stats():
     expired_accounts = 0
 
     for account in account_pool.accounts:
-        if account_pool.is_expired(account):
+        if account.is_expired():
             expired_accounts += 1
-        elif account_pool.is_in_cooldown(account):
+        elif account.is_in_cooldown():
             cooldown_accounts += 1
         else:
             active_accounts += 1
 
-    # 统计请求数据
-    total_requests = sum(account_pool.request_count.values())
-    failed_requests = sum(account_pool.error_count.values())
+    # 统计请求数据（从 Account 实例获取）
+    total_requests = sum(account.request_count for account in account_pool.accounts)
+    failed_requests = sum(account.error_count for account in account_pool.accounts)
     successful_requests = total_requests - failed_requests
     success_rate = (successful_requests / total_requests * 100) if total_requests > 0 else 0.0
 
