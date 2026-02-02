@@ -245,7 +245,7 @@ async def add_account(request: AddAccountRequest):
         return {
             "message": f"Account {account.email} added successfully",
             "email": account.email,
-            "remaining_days": account_pool.get_remaining_days(account)
+            "remaining_days": account.get_remaining_days()
         }
 
     except Exception as e:
