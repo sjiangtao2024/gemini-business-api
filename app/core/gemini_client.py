@@ -65,7 +65,9 @@ class GeminiClient:
         """Ensure HTTP client is initialized"""
         if self._client is None:
             self._client = httpx.AsyncClient(
-                timeout=httpx.Timeout(self.TIMEOUT, connect=30.0),
+                timeout=httpx.Timeout(
+                    self.TIMEOUT, connect=60.0, read=self.TIMEOUT, write=self.TIMEOUT, pool=self.TIMEOUT
+                ),
                 follow_redirects=True,
             )
 

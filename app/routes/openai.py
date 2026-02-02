@@ -390,7 +390,7 @@ async def generate_images(request: ImageGenerationRequest):
                         model=request.model,
                         max_retries=0,
                     )
-                except httpx.ReadTimeout:
+                except httpx.TimeoutException:
                     # Generation may still complete; poll metadata from the session.
                     session_name = client._session_name or ""
                     if session_name:
