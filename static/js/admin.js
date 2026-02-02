@@ -133,6 +133,43 @@ function updateCookieExpiryAlert(accounts) {
     alertBox.classList.remove('hidden');
 }
 
+function getTokenExpiryDisplay(expiresAt) {
+    if (!expiresAt) {
+        return {
+            timeLabel: '未设置',
+            remainingLabel: '—',
+            className: 'text-gray-500'
+        };
+    }
+
+    const expiryDate = new Date(expiresAt);
+    if (Number.isNaN(expiryDate.getTime())) {
+        return {
+            timeLabel: '无效时间',
+            remainingLabel: '—',
+            className: 'text-red-600 font-semibold'
+        };
+    }
+
+    const now = Date.now();
+    const diffMs = expiryDate.getTime() - now;
+    const diffHours = Math.ceil(diffMs / (1000 * 60 * 60));
+    const remainingLabel = diffMs <= 0 ? '已过期' : `${diffHours} 小时`;
+
+    let className = 'text-gray-900';
+    if (diffMs <= 0 || diffHours <= 6) {
+        className = 'text-red-600 font-semibold';
+    } else if (diffHours <= 24) {
+        className = 'text-yellow-600';
+    }
+
+    return {
+        timeLabel: expiryDate.toLocaleString('zh-CN'),
+        remainingLabel,
+        className
+    };
+}
+
 /**
  * 渲染账号列表表格
  */
@@ -189,13 +226,7 @@ function createAccountRow(account) {
         ? new Date(account.last_used_at).toLocaleString('zh-CN')
         : '未使用';
 
-    // 剩余天数颜色
-    let daysColor = 'text-gray-900';
-    if (account.remaining_days < 3) {
-        daysColor = 'text-red-600 font-semibold';
-    } else if (account.remaining_days < 7) {
-        daysColor = 'text-yellow-600';
-    }
+    const tokenExpiry = getTokenExpiryDisplay(account.expires_at);
 
     tr.innerHTML = `
         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
@@ -204,8 +235,9 @@ function createAccountRow(account) {
         <td class="px-6 py-4 whitespace-nowrap text-sm">
             ${statusBadge}
         </td>
-        <td class="px-6 py-4 whitespace-nowrap text-sm ${daysColor}">
-            ${account.remaining_days} 天
+        <td class="px-6 py-4 whitespace-nowrap text-sm ${tokenExpiry.className}">
+            <div>${tokenExpiry.timeLabel}</div>
+            <div class="text-xs text-gray-500">剩余 ${tokenExpiry.remainingLabel}</div>
         </td>
         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
             ${account.total_requests}
@@ -216,7 +248,13 @@ function createAccountRow(account) {
         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
             ${lastUsed}
         </td>
-        <td class="px-6 py-4 whitespace-nowrap text-sm">
+        <td class="px-6 py-4 whitespace-nowrap text-sm space-x-3">
+            ${(account.status || '').startsWith('cooldown')
+                ? `<button onclick="clearCooldownConfirm('${escapeHtml(account.email)}')"
+                        class="text-blue-600 hover:text-blue-900">
+                        🔓 清除冷却
+                   </button>`
+                : ''}
             <button onclick="deleteAccountConfirm('${escapeHtml(account.email)}')"
                     class="text-red-600 hover:text-red-900">
                 🗑️ 删除
@@ -225,6 +263,24 @@ function createAccountRow(account) {
     `;
 
     return tr;
+}
+
+/**
+ * 清除账号冷却状态
+ */
+async function clearCooldownConfirm(email) {
+    if (!confirm(`确定要清除账号 ${email} 的冷却状态吗？`)) {
+        return;
+    }
+
+    try {
+        await api.clearCooldown(email);
+        showNotification(`已清除冷却：${email}`, 'success');
+        await loadAccounts();
+    } catch (error) {
+        console.error('Failed to clear cooldown:', error);
+        showNotification('清除冷却失败: ' + error.message, 'error');
+    }
 }
 
 /**

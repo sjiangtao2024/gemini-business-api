@@ -53,6 +53,22 @@ class APIClient {
     }
 
     /**
+     * 清除账号冷却状态
+     */
+    async clearCooldown(email) {
+        const response = await fetch(`${API_BASE}/admin/accounts/${encodeURIComponent(email)}/clear-cooldown`, {
+            method: 'POST',
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || 'Failed to clear cooldown');
+        }
+
+        return await response.json();
+    }
+
+    /**
      * 获取统计信息
      */
     async getStats() {
