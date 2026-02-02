@@ -10,4 +10,5 @@ services:
       IMAP_USER: ${IMAP_USER}
       IMAP_PASS: ${IMAP_PASS}
       GEMINI_LOGIN_EMAIL: ${GEMINI_LOGIN_EMAIL}
+      DISPLAY: ":99"
     command: ["--schedule"]

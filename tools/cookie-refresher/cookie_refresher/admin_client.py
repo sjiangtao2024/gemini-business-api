@@ -15,3 +15,8 @@ class AdminClient:
             self.client.delete(f"/admin/accounts/{email}")
             resp = self.client.post("/admin/accounts", json=payload)
         resp.raise_for_status()
+
+    def list_accounts(self) -> list[Dict[str, Any]]:
+        resp = self.client.get("/admin/accounts")
+        resp.raise_for_status()
+        return resp.json()

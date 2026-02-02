@@ -22,6 +22,8 @@ class SeleniumUCEngine:
         options = uc.ChromeOptions()
         options.add_argument("--no-sandbox")
         options.add_argument("--disable-dev-shm-usage")
+        options.add_argument("--disable-gpu")
+        options.add_argument("--window-size=1280,800")
         return uc.Chrome(options=options)
 
     def login_and_extract(self, email: str) -> Dict[str, Any]:

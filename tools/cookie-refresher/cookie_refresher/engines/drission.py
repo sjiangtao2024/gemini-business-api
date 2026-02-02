@@ -18,6 +18,9 @@ class DrissionEngine:
         from DrissionPage import ChromiumPage, ChromiumOptions
 
         options = ChromiumOptions()
+        options.set_argument("--no-sandbox")
+        options.set_argument("--disable-dev-shm-usage")
+        options.set_argument("--disable-gpu")
         return ChromiumPage(options)
 
     def login_and_extract(self, email: str) -> Dict[str, str]:

@@ -34,3 +34,7 @@ Required env vars:
 
 - `--once`: run a single refresh cycle
 - `--schedule`: run continuous scheduled refresh
+
+## Docker Notes
+
+The container includes Google Chrome + Xvfb. Set `DISPLAY=:99` for headed automation.
