@@ -38,8 +38,11 @@ class DrissionEngine:
 
     def _login(self, page, email: str) -> None:
         page.get(self.login_url)
-        email_input = page.ele('input[type="email"]')
-        email_input.input(email)
-        code = self.code_provider()
-        code_input = page.ele('input[name="code"]')
-        code_input.input(code)
+        try:
+            email_input = page.ele('input[type="email"]')
+            email_input.input(email)
+            code = self.code_provider()
+            code_input = page.ele('input[name="code"]')
+            code_input.input(code)
+        except Exception as exc:
+            raise RuntimeError("login timeout") from exc

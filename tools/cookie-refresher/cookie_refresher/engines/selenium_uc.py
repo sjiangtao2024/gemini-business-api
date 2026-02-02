@@ -48,17 +48,20 @@ class SeleniumUCEngine:
             By = None
             Keys = None
 
-        if By and Keys:
-            email_input = driver.find_element(By.CSS_SELECTOR, 'input[type="email"]')
-            email_input.send_keys(email)
-            email_input.send_keys(Keys.ENTER)
-            code = self.code_provider()
-            code_input = driver.find_element(By.CSS_SELECTOR, 'input[name="code"]')
-            code_input.send_keys(code)
-            code_input.send_keys(Keys.ENTER)
-        else:
-            email_input = driver.find_element(None, None)
-            email_input.send_keys(email)
-            code = self.code_provider()
-            code_input = driver.find_element(None, None)
-            code_input.send_keys(code)
+        try:
+            if By and Keys:
+                email_input = driver.find_element(By.CSS_SELECTOR, 'input[type="email"]')
+                email_input.send_keys(email)
+                email_input.send_keys(Keys.ENTER)
+                code = self.code_provider()
+                code_input = driver.find_element(By.CSS_SELECTOR, 'input[name="code"]')
+                code_input.send_keys(code)
+                code_input.send_keys(Keys.ENTER)
+            else:
+                email_input = driver.find_element(None, None)
+                email_input.send_keys(email)
+                code = self.code_provider()
+                code_input = driver.find_element(None, None)
+                code_input.send_keys(code)
+        except Exception as exc:
+            raise RuntimeError("login timeout") from exc
