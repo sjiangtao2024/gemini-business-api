@@ -240,6 +240,10 @@ function showAddAccountModal() {
 function hideAddAccountModal() {
     document.getElementById('add-account-modal').classList.add('hidden');
     document.getElementById('add-account-form').reset();
+    const preview = document.getElementById('cookie-expiry-preview');
+    if (preview) {
+        preview.textContent = '预计 cookie 过期时间（12小时）：未计算';
+    }
 }
 
 /**
@@ -266,6 +270,14 @@ async function handleAddAccount(form) {
         csesidx: formData.get('csesidx'),
         user_agent: formData.get('user_agent'),
     };
+    const expiresAt = formData.get('expires_at');
+    const createdAt = formData.get('created_at');
+    if (expiresAt) {
+        accountData.expires_at = expiresAt;
+    }
+    if (createdAt) {
+        accountData.created_at = createdAt;
+    }
 
     try {
         await api.addAccount(accountData);
@@ -276,6 +288,49 @@ async function handleAddAccount(form) {
     } catch (error) {
         console.error('Failed to add account:', error);
         showNotification('添加账号失败: ' + error.message, 'error');
+    }
+}
+
+function applyPluginJson() {
+    const input = document.getElementById('plugin-json-input');
+    if (!input || !input.value.trim()) {
+        showNotification('请先粘贴插件 JSON', 'warning');
+        return;
+    }
+
+    let payload;
+    try {
+        payload = JSON.parse(input.value.trim());
+    } catch (error) {
+        showNotification('JSON 解析失败，请检查格式', 'error');
+        return;
+    }
+
+    const form = document.getElementById('add-account-form');
+    form.querySelector('[name="team_id"]').value = payload.team_id || '';
+    form.querySelector('[name="secure_c_ses"]').value = payload.secure_c_ses || '';
+    form.querySelector('[name="host_c_oses"]').value = payload.host_c_oses || '';
+    form.querySelector('[name="csesidx"]').value = payload.csesidx || '';
+    form.querySelector('[name="user_agent"]').value = payload.user_agent || '';
+
+    const now = new Date();
+    const cookieExpiry = new Date(now.getTime() + 12 * 60 * 60 * 1000);
+    const expiresAtInput = document.getElementById('expires-at-input');
+    const createdAtInput = document.getElementById('created-at-input');
+    if (expiresAtInput) {
+        expiresAtInput.value = cookieExpiry.toISOString();
+    }
+    if (createdAtInput) {
+        createdAtInput.value = now.toISOString();
+    }
+
+    const preview = document.getElementById('cookie-expiry-preview');
+    if (preview) {
+        preview.textContent = `预计 cookie 过期时间（12小时）：${cookieExpiry.toLocaleString('zh-CN')}`;
+    }
+
+    if (!form.querySelector('[name="email"]').value) {
+        showNotification('请补充账号邮箱', 'warning');
     }
 }
 
@@ -361,6 +416,8 @@ function showNotification(message, type = 'info') {
         alert('❌ ' + message);
     } else if (type === 'success') {
         alert('✅ ' + message);
+    } else if (type === 'warning') {
+        alert('⚠️ ' + message);
     } else {
         alert('ℹ️ ' + message);
     }
