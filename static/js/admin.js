@@ -6,7 +6,7 @@
 let currentTab = 'dashboard';
 
 // 刷新间隔（毫秒）
-const REFRESH_INTERVAL = 5000;
+const REFRESH_INTERVAL = 5 * 60 * 1000;
 let refreshTimer = null;
 
 /**
