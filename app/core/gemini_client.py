@@ -203,7 +203,8 @@ class GeminiClient:
         # 工具配置
         if model_name in self.VIRTUAL_MODELS:
             tools_spec = self.VIRTUAL_MODELS[model_name]
-            model_id_for_config = None
+            # Match web behavior: image generation uses toolsSpec + a base model.
+            model_id_for_config = "gemini-2.5-flash" if model_name == "gemini-imagen" else None
         else:
             tools_spec = {
                 "webGroundingSpec": {},
