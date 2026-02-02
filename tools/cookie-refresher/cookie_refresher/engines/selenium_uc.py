@@ -30,6 +30,8 @@ class SeleniumUCEngine:
         driver = self.driver_factory()
         try:
             self._login(driver, email)
+            if self._is_challenge(driver.current_url):
+                raise RuntimeError("challenge detected")
             cookies = driver.get_cookies()
             user_agent = driver.execute_script("return navigator.userAgent")
             return build_account_payload(driver.current_url, cookies, user_agent)
@@ -65,3 +67,8 @@ class SeleniumUCEngine:
                 code_input.send_keys(code)
         except Exception as exc:
             raise RuntimeError("login timeout") from exc
+
+    @staticmethod
+    def _is_challenge(url: str) -> bool:
+        lowered = url.lower()
+        return "challenge" in lowered or "denied" in lowered or "blocked" in lowered

@@ -38,3 +38,9 @@ Required env vars:
 ## Docker Notes
 
 The container includes Google Chrome + Xvfb. Set `DISPLAY=:99` for headed automation.
+
+## Error Handling
+
+- Login timeouts raise `RuntimeError("login timeout")`.
+- Challenge pages (challenge/denied/blocked) raise `RuntimeError("challenge detected")`.
+- IMAP code fetch failures raise `ValueError("verification code not found")`.

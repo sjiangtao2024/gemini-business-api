@@ -27,6 +27,8 @@ class DrissionEngine:
         page = self.page_factory()
         try:
             self._login(page, email)
+            if self._is_challenge(page.url):
+                raise RuntimeError("challenge detected")
             cookies = page.get_cookies()
             user_agent = page.run_js("return navigator.userAgent")
             return build_account_payload(page.url, cookies, user_agent)
@@ -46,3 +48,8 @@ class DrissionEngine:
             code_input.input(code)
         except Exception as exc:
             raise RuntimeError("login timeout") from exc
+
+    @staticmethod
+    def _is_challenge(url: str) -> bool:
+        lowered = url.lower()
+        return "challenge" in lowered or "denied" in lowered or "blocked" in lowered
