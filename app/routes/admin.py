@@ -285,15 +285,11 @@ async def delete_account(email: str):
     # 从账号池移除
     account_pool.accounts.remove(account_to_remove)
 
-    # 清理相关数据
-    if email in account_pool.cooldown_until:
-        del account_pool.cooldown_until[email]
-    if email in account_pool.last_used:
-        del account_pool.last_used[email]
-    if email in account_pool.request_count:
-        del account_pool.request_count[email]
-    if email in account_pool.error_count:
-        del account_pool.error_count[email]
+    # 清理相关数据（兼容旧字段）
+    for attr in ("cooldown_until", "last_used", "request_count", "error_count"):
+        store = getattr(account_pool, attr, None)
+        if isinstance(store, dict) and email in store:
+            del store[email]
 
     # 更新配置文件
     await update_accounts_config()
@@ -303,6 +299,55 @@ async def delete_account(email: str):
     return {
         "message": f"Account {email} deleted successfully",
         "remaining_accounts": len(account_pool.accounts)
+    }
+
+
+@router.post("/accounts/{email}/clear-cooldown")
+async def clear_account_cooldown(email: str):
+    """
+    清除账号冷却状态
+
+    立即清除指定账号的冷却状态，恢复为 active。
+    """
+    if account_pool is None:
+        raise HTTPException(
+            status_code=503,
+            detail="Service unavailable: Account pool not initialized"
+        )
+
+    # 查找账号
+    account_to_clear = None
+    for account in account_pool.accounts:
+        if account.email == email:
+            account_to_clear = account
+            break
+
+    if account_to_clear is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Account {email} not found"
+        )
+
+    # 清除冷却状态
+    old_status = account_to_clear.status
+    account_to_clear.cooldown_until = 0
+
+    # 恢复为 active 状态
+    from app.models.account import AccountStatus
+    if account_to_clear.status in [
+        AccountStatus.COOLDOWN_401,
+        AccountStatus.COOLDOWN_403,
+        AccountStatus.COOLDOWN_429,
+    ]:
+        account_to_clear.status = AccountStatus.ACTIVE
+
+    logger.info(f"🔓 Cleared cooldown for account: {email} (was: {old_status})")
+
+    return {
+        "message": f"Cooldown cleared for account {email}",
+        "old_status": old_status.value,
+        "new_status": account_to_clear.status.value,
+        "email": email
     }
 
 
