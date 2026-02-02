@@ -205,6 +205,8 @@ function createAccountRow(account) {
     let statusBadge = '';
     if (account.status === 'active') {
         statusBadge = '<span class="status-badge status-active">可用</span>';
+    } else if (account.status === 'cooldown') {
+        statusBadge = '<span class="status-badge status-cooldown">冷却中</span>';
     } else if (account.status === 'cooldown_401') {
         statusBadge = '<span class="status-badge status-cooldown">认证失败(401)</span>';
     } else if (account.status === 'cooldown_403') {
@@ -249,7 +251,7 @@ function createAccountRow(account) {
             ${lastUsed}
         </td>
         <td class="px-6 py-4 whitespace-nowrap text-sm space-x-3">
-            ${(account.status || '').startsWith('cooldown')
+            ${(account.cooldown_until || (account.status || '').startsWith('cooldown'))
                 ? `<button onclick="clearCooldownConfirm('${escapeHtml(account.email)}')"
                         class="text-blue-600 hover:text-blue-900">
                         🔓 清除冷却
