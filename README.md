@@ -235,16 +235,29 @@ See `docs/` directory for detailed design documents:
 
 Endpoint: `POST /v1/images/generations`
 
+### Request
+- `prompt` (string, required): 文本提示词
+- `model` (string, optional): 模型名称，默认 `gemini-imagen`
+- `n` (int, optional): 生成图片数量（1-10），默认 1
+- `size` (string, optional): 期望尺寸（例如 `1024x1024`），当前仅透传/记录，不保证生效
+- `response_format` (string, optional): `b64_json` 或 `url`，默认 `b64_json`
+- `quality` (string, optional): `standard` / `hd`，当前仅透传/记录，不保证生效
+- `style` (string, optional): `natural` / `vivid`，当前仅透传/记录，不保证生效
+
 Request:
 ```json
 {
   "prompt": "a cute robot, high detail",
   "model": "gemini-imagen",
   "n": 1,
-  "response_format": "b64_json"
+  "response_format": "b64_json",
+  "size": "1024x1024",
+  "quality": "standard",
+  "style": "natural"
 }
 ```
 
+### Response
 Response (includes metadata):
 ```json
 {
@@ -261,8 +274,24 @@ Response (includes metadata):
 }
 ```
 
-- `response_format`: `b64_json` (default) or `url` (data URL).
-- Images are returned **inline** (no server-side storage).
+### Notes
+- `response_format`:
+  - `b64_json`：返回纯 base64（无前缀）
+  - `url`：返回 `data:` URL（仍然是内联，不落盘）
+- 图片**不落盘**，客户端自行保存即可
+- 如果 Gemini 侧没有返回图片文件，接口返回 `502`（no files）
+
+### Error Codes
+- `400`: 参数错误（如 `response_format` 非法）
+- `502`: Gemini 未返回图片文件
+- `5xx`: 上游错误或内部错误
+
+### Example (curl)
+```bash
+curl -s http://127.0.0.1:8000/v1/images/generations \
+  -H "Content-Type: application/json" \
+  -d '{"prompt":"a cute robot, high detail","model":"gemini-imagen","n":1,"response_format":"b64_json"}'
+```
 
 ## 🗺️ Roadmap
 
