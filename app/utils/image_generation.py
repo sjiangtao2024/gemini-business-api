@@ -2,7 +2,10 @@
 Image generation helpers for Gemini Business API responses.
 """
 
+from io import BytesIO
 from typing import Any, Dict, List, Tuple
+
+from PIL import Image
 
 
 def parse_generated_files(raw_chunks: List[Dict[str, Any]]) -> Tuple[List[Dict[str, str]], str]:
@@ -45,3 +48,17 @@ def parse_generated_files(raw_chunks: List[Dict[str, Any]]) -> Tuple[List[Dict[s
             })
 
     return file_ids, session_name
+
+
+def extract_image_metadata(image_bytes: bytes, mime_type: str) -> Dict[str, Any]:
+    """
+    Extract image metadata from bytes.
+    """
+    with Image.open(BytesIO(image_bytes)) as img:
+        width, height = img.size
+
+    return {
+        "mime_type": mime_type,
+        "width": width,
+        "height": height,
+    }

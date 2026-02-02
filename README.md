@@ -231,6 +231,39 @@ See `docs/` directory for detailed design documents:
 6. `06-implementation-plan.md` - Phase-by-phase plan
 7. `07-account-lifecycle-management.md` - 30-day lifecycle details
 
+## 🖼️ Image Generation (OpenAI Compatible)
+
+Endpoint: `POST /v1/images/generations`
+
+Request:
+```json
+{
+  "prompt": "a cute robot, high detail",
+  "model": "gemini-imagen",
+  "n": 1,
+  "response_format": "b64_json"
+}
+```
+
+Response (includes metadata):
+```json
+{
+  "created": 1738480000,
+  "data": [
+    {
+      "b64_json": "iVBORw0KGgoAAAANSUhEUg...",
+      "revised_prompt": "a cute robot, high detail",
+      "mime_type": "image/png",
+      "width": 1024,
+      "height": 1024
+    }
+  ]
+}
+```
+
+- `response_format`: `b64_json` (default) or `url` (data URL).
+- Images are returned **inline** (no server-side storage).
+
 ## 🗺️ Roadmap
 
 - [x] **Phase 1**: Core API (Token Manager, Account Pool, OpenAI compatibility) ✅

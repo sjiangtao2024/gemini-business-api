@@ -18,7 +18,7 @@ from app.core.account_pool import AccountPool
 from app.core.gemini_client import GeminiClient
 from app.utils.streaming import stream_gemini_response
 from app.utils.multimodal import GeminiMultimodalFormatter
-from app.utils.image_generation import parse_generated_files
+from app.utils.image_generation import extract_image_metadata, parse_generated_files
 
 logger = logging.getLogger(__name__)
 
@@ -141,6 +141,9 @@ class ImageData(BaseModel):
     b64_json: Optional[str] = None
     url: Optional[str] = None
     revised_prompt: Optional[str] = None
+    mime_type: Optional[str] = None
+    width: Optional[int] = None
+    height: Optional[int] = None
 
 
 @router.post("/chat/completions")
@@ -416,15 +419,18 @@ async def generate_images(request: ImageGenerationRequest):
                     continue
 
                 b64_data = base64.b64encode(result_data).decode("utf-8")
+                metadata = extract_image_metadata(result_data, mime)
                 if response_format == "url":
                     data_list.append({
                         "url": f"data:{mime};base64,{b64_data}",
                         "revised_prompt": request.prompt,
+                        **metadata,
                     })
                 else:
                     data_list.append({
                         "b64_json": b64_data,
                         "revised_prompt": request.prompt,
+                        **metadata,
                     })
 
             return {
