@@ -389,10 +389,10 @@ async def generate_images(request: ImageGenerationRequest):
                     max_retries=0,
                 )
 
-            raw_chunks = result.get("raw_data", [])
-            file_ids, session_name, upstream_error = parse_generated_files(raw_chunks)
-            if not session_name:
-                session_name = result.get("conversation_id", "")
+                raw_chunks = result.get("raw_data", [])
+                file_ids, session_name, upstream_error = parse_generated_files(raw_chunks)
+                if not session_name:
+                    session_name = result.get("conversation_id", "")
 
                 if not file_ids or not session_name:
                     logger.warning(
@@ -416,23 +416,23 @@ async def generate_images(request: ImageGenerationRequest):
                                 len(fallback_files),
                             )
                             file_ids = fallback_files
-                if upstream_error:
+                    if upstream_error:
+                        raise HTTPException(
+                            status_code=502,
+                            detail=f"Upstream image generation error: {upstream_error}",
+                        )
+                    if attempt < max_attempts:
+                        logger.warning(
+                            "Image generation returned no files (attempt %s/%s), retrying...",
+                            attempt,
+                            max_attempts,
+                        )
+                        await asyncio.sleep(retry_delay_seconds)
+                        continue
                     raise HTTPException(
                         status_code=502,
-                        detail=f"Upstream image generation error: {upstream_error}",
+                        detail="Image generation returned no files",
                     )
-                if attempt < max_attempts:
-                    logger.warning(
-                        "Image generation returned no files (attempt %s/%s), retrying...",
-                        attempt,
-                        max_attempts,
-                    )
-                    await asyncio.sleep(retry_delay_seconds)
-                    continue
-                raise HTTPException(
-                    status_code=502,
-                    detail="Image generation returned no files",
-                )
 
                 metadata = await client.list_session_file_metadata(session_name)
 
