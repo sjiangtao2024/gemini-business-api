@@ -389,6 +389,12 @@ async def generate_images(request: ImageGenerationRequest):
                     session_name = result.get("conversation_id", "")
 
                 if not file_ids or not session_name:
+                    logger.warning(
+                        "Image generation missing files: files=%s session=%s raw_chunks=%s",
+                        len(file_ids),
+                        session_name,
+                        str(raw_chunks[:2])[:800],
+                    )
                     if attempt < max_attempts:
                         logger.warning(
                             "Image generation returned no files (attempt %s/%s), retrying...",
