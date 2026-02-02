@@ -18,3 +18,19 @@ Standalone service to refresh Gemini Business cookies and update gemini-business
    ```bash
    pytest
    ```
+
+## Configuration
+
+Required env vars:
+- `ADMIN_BASE_URL`
+- `ADMIN_API_KEY`
+- `IMAP_HOST`
+- `IMAP_PORT`
+- `IMAP_USER`
+- `IMAP_PASS`
+- `GEMINI_LOGIN_EMAIL`
+
+## Run Modes
+
+- `--once`: run a single refresh cycle
+- `--schedule`: run continuous scheduled refresh

@@ -1,0 +1,13 @@
+version: "3.9"
+services:
+  cookie-refresher:
+    build: .
+    environment:
+      ADMIN_BASE_URL: ${ADMIN_BASE_URL}
+      ADMIN_API_KEY: ${ADMIN_API_KEY}
+      IMAP_HOST: ${IMAP_HOST}
+      IMAP_PORT: ${IMAP_PORT}
+      IMAP_USER: ${IMAP_USER}
+      IMAP_PASS: ${IMAP_PASS}
+      GEMINI_LOGIN_EMAIL: ${GEMINI_LOGIN_EMAIL}
+    command: ["--schedule"]
