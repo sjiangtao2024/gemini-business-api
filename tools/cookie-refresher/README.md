@@ -42,5 +42,6 @@ The container includes Google Chrome + Xvfb. Set `DISPLAY=:99` for headed automa
 ## Error Handling
 
 - Login timeouts raise `RuntimeError("login timeout")`.
+- Sign-in errors raise `RuntimeError("signin error")`.
 - Challenge pages (challenge/denied/blocked) raise `RuntimeError("challenge detected")`.
 - IMAP code fetch failures raise `ValueError("verification code not found")`.

@@ -30,6 +30,8 @@ class SeleniumUCEngine:
         driver = self.driver_factory()
         try:
             self._login(driver, email)
+            if self._is_signin_error(driver.current_url):
+                raise RuntimeError("signin error")
             if self._is_challenge(driver.current_url):
                 raise RuntimeError("challenge detected")
             cookies = driver.get_cookies()
@@ -72,3 +74,7 @@ class SeleniumUCEngine:
     def _is_challenge(url: str) -> bool:
         lowered = url.lower()
         return "challenge" in lowered or "denied" in lowered or "blocked" in lowered
+
+    @staticmethod
+    def _is_signin_error(url: str) -> bool:
+        return "signin-error" in url.lower()

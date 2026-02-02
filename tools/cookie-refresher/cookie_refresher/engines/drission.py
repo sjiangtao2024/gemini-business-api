@@ -27,6 +27,8 @@ class DrissionEngine:
         page = self.page_factory()
         try:
             self._login(page, email)
+            if self._is_signin_error(page.url):
+                raise RuntimeError("signin error")
             if self._is_challenge(page.url):
                 raise RuntimeError("challenge detected")
             cookies = page.get_cookies()
@@ -53,3 +55,7 @@ class DrissionEngine:
     def _is_challenge(url: str) -> bool:
         lowered = url.lower()
         return "challenge" in lowered or "denied" in lowered or "blocked" in lowered
+
+    @staticmethod
+    def _is_signin_error(url: str) -> bool:
+        return "signin-error" in url.lower()
