@@ -383,21 +383,26 @@ async def generate_images(request: ImageGenerationRequest):
                     model=request.model,
                 )
 
-                raw_chunks = result.get("raw_data", [])
-                file_ids, session_name = parse_generated_files(raw_chunks)
-                if not session_name:
-                    session_name = result.get("conversation_id", "")
+            raw_chunks = result.get("raw_data", [])
+            file_ids, session_name, upstream_error = parse_generated_files(raw_chunks)
+            if not session_name:
+                session_name = result.get("conversation_id", "")
 
-                if not file_ids or not session_name:
-                    logger.warning(
-                        "Image generation missing files: files=%s session=%s raw_chunks=%s",
-                        len(file_ids),
-                        session_name,
-                        str(raw_chunks[:2])[:800],
+            if not file_ids or not session_name:
+                logger.warning(
+                    "Image generation missing files: files=%s session=%s raw_chunks=%s",
+                    len(file_ids),
+                    session_name,
+                    str(raw_chunks[:2])[:800],
+                )
+                if upstream_error:
+                    raise HTTPException(
+                        status_code=502,
+                        detail=f"Upstream image generation error: {upstream_error}",
                     )
-                    if attempt < max_attempts:
-                        logger.warning(
-                            "Image generation returned no files (attempt %s/%s), retrying...",
+                if attempt < max_attempts:
+                    logger.warning(
+                        "Image generation returned no files (attempt %s/%s), retrying...",
                             attempt,
                             max_attempts,
                         )

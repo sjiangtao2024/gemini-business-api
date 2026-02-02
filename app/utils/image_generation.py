@@ -8,20 +8,25 @@ from typing import Any, Dict, List, Tuple
 from PIL import Image
 
 
-def parse_generated_files(raw_chunks: List[Dict[str, Any]]) -> Tuple[List[Dict[str, str]], str]:
+def parse_generated_files(raw_chunks: List[Dict[str, Any]]) -> Tuple[List[Dict[str, str]], str, str | None]:
     """
     Parse generated file references from Gemini stream chunks.
 
     Returns:
-        (file_list, session_name)
+        (file_list, session_name, error_message)
         file_list: [{"fileId": str, "mimeType": str}, ...]
         session_name: session identifier if present
     """
     file_ids: List[Dict[str, str]] = []
     session_name = ""
     seen = set()
+    error_message: str | None = None
 
     for chunk in raw_chunks:
+        if "error" in chunk and not error_message:
+            err = chunk.get("error", {})
+            error_message = err.get("message") or str(err)
+
         stream_assist = chunk.get("streamAssistResponse", {})
         session_info = stream_assist.get("sessionInfo", {})
         if session_info.get("session"):
@@ -47,7 +52,7 @@ def parse_generated_files(raw_chunks: List[Dict[str, Any]]) -> Tuple[List[Dict[s
                 "mimeType": file_info.get("mimeType", "image/png"),
             })
 
-    return file_ids, session_name
+    return file_ids, session_name, error_message
 
 
 def extract_image_metadata(image_bytes: bytes, mime_type: str) -> Dict[str, Any]:
