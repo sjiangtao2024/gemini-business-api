@@ -251,7 +251,7 @@ function createAccountRow(account) {
             ${lastUsed}
         </td>
         <td class="px-6 py-4 whitespace-nowrap text-sm space-x-3">
-            ${(account.cooldown_until || (account.status || '').startsWith('cooldown'))
+            ${((account.status || '') === 'cooldown' || (account.status || '').startsWith('cooldown') || account.cooldown_until)
                 ? `<button onclick="clearCooldownConfirm('${escapeHtml(account.email)}')"
                         class="text-blue-600 hover:text-blue-900">
                         🔓 清除冷却
