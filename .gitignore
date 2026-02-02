@@ -60,6 +60,7 @@ data/expired/
 *.bak
 *.swp
 .cache/
+.worktrees/
 
 # Local development files (not for version control)
 CLAUDE.md
