@@ -103,11 +103,34 @@ async function loadDashboard() {
 async function loadAccounts() {
     try {
         const accounts = await api.getAccounts();
+        updateCookieExpiryAlert(accounts);
         renderAccountsTable(accounts);
     } catch (error) {
         console.error('Failed to load accounts:', error);
         showNotification('加载账号列表失败: ' + error.message, 'error');
     }
+}
+
+function updateCookieExpiryAlert(accounts) {
+    const alertBox = document.getElementById('cookie-expiry-alert');
+    const alertText = document.getElementById('cookie-expiry-alert-text');
+    if (!alertBox || !alertText) {
+        return;
+    }
+
+    const authIssues = accounts.filter(account =>
+        account.status === 'cooldown_401' || account.status === 'cooldown_403'
+    );
+
+    if (authIssues.length === 0) {
+        alertBox.classList.add('hidden');
+        alertText.textContent = '';
+        return;
+    }
+
+    const emails = authIssues.map(account => account.email).join('，');
+    alertText.textContent = `检测到 ${authIssues.length} 个账号认证失败（401/403），请刷新 Cookie：${emails}`;
+    alertBox.classList.remove('hidden');
 }
 
 /**
@@ -145,10 +168,20 @@ function createAccountRow(account) {
     let statusBadge = '';
     if (account.status === 'active') {
         statusBadge = '<span class="status-badge status-active">可用</span>';
-    } else if (account.status === 'cooldown') {
-        statusBadge = '<span class="status-badge status-cooldown">冷却中</span>';
+    } else if (account.status === 'cooldown_401') {
+        statusBadge = '<span class="status-badge status-cooldown">认证失败(401)</span>';
+    } else if (account.status === 'cooldown_403') {
+        statusBadge = '<span class="status-badge status-cooldown">认证失败(403)</span>';
+    } else if (account.status === 'cooldown_429') {
+        statusBadge = '<span class="status-badge status-cooldown">限流冷却</span>';
+    } else if (account.status === 'expiring_soon') {
+        statusBadge = '<span class="status-badge status-cooldown">即将过期</span>';
     } else if (account.status === 'expired') {
         statusBadge = '<span class="status-badge status-expired">已过期</span>';
+    } else if (account.status === 'error') {
+        statusBadge = '<span class="status-badge status-expired">异常</span>';
+    } else {
+        statusBadge = `<span class="status-badge status-cooldown">${escapeHtml(account.status)}</span>`;
     }
 
     // 最后使用时间
