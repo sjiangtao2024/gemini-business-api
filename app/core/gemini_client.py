@@ -34,7 +34,7 @@ class GeminiClient:
     LIST_SESSION_FILES_API = "/v1alpha/locations/global/widgetListSessionFileMetadata"
 
     # Request configuration
-    TIMEOUT = 120.0  # 120 seconds (image generation can be slow)
+    TIMEOUT = 600.0  # 600 seconds (match gemini-business2api for image generation)
     MAX_RETRIES = 3
     VIRTUAL_MODELS = {
         "gemini-imagen": {"imageGenerationSpec": {}},

@@ -395,7 +395,7 @@ async def generate_images(request: ImageGenerationRequest):
                     session_name = client._session_name or ""
                     if session_name:
                         fallback_files = []
-                        for _ in range(10):
+                        for _ in range(30):
                             metadata = await client.list_session_file_metadata(session_name)
                             fallback_files = extract_files_from_metadata(metadata)
                             if fallback_files:
@@ -424,7 +424,7 @@ async def generate_images(request: ImageGenerationRequest):
                     if session_name:
                         # Poll metadata for async image generation completion.
                         fallback_files = []
-                        for _ in range(10):
+                        for _ in range(30):
                             metadata = await client.list_session_file_metadata(session_name)
                             fallback_files = extract_files_from_metadata(metadata)
                             if fallback_files:
