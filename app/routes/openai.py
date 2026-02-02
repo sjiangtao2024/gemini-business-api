@@ -18,7 +18,11 @@ from app.core.account_pool import AccountPool
 from app.core.gemini_client import GeminiClient
 from app.utils.streaming import stream_gemini_response
 from app.utils.multimodal import GeminiMultimodalFormatter
-from app.utils.image_generation import extract_image_metadata, parse_generated_files
+from app.utils.image_generation import (
+    extract_files_from_metadata,
+    extract_image_metadata,
+    parse_generated_files,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -395,6 +399,15 @@ async def generate_images(request: ImageGenerationRequest):
                     session_name,
                     str(raw_chunks[:2])[:800],
                 )
+                if session_name:
+                    metadata = await client.list_session_file_metadata(session_name)
+                    fallback_files = extract_files_from_metadata(metadata)
+                    if fallback_files:
+                        logger.warning(
+                            "Image generation fallback: using %s files from metadata",
+                            len(fallback_files),
+                        )
+                        file_ids = fallback_files
                 if upstream_error:
                     raise HTTPException(
                         status_code=502,
@@ -427,7 +440,7 @@ async def generate_images(request: ImageGenerationRequest):
                     fid = file_info["fileId"]
                     meta = metadata.get(fid, {})
                     mime = meta.get("mimeType", file_info.get("mimeType", "image/png"))
-                    correct_session = meta.get("session") or session_name
+                    correct_session = meta.get("session") or file_info.get("session") or session_name
                     tasks.append((fid, mime, client.download_file(correct_session, fid)))
 
                 results = await asyncio.gather(

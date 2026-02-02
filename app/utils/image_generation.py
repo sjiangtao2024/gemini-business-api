@@ -67,3 +67,33 @@ def extract_image_metadata(image_bytes: bytes, mime_type: str) -> Dict[str, Any]
         "width": width,
         "height": height,
     }
+
+
+def extract_files_from_metadata(metadata: Dict[str, Dict[str, Any]]) -> List[Dict[str, str]]:
+    """
+    Build file list from session metadata.
+    """
+    items: List[Dict[str, Any]] = list(metadata.values())
+
+    def sort_key(item: Dict[str, Any]) -> str:
+        return (
+            item.get("createTime")
+            or item.get("create_time")
+            or item.get("createTimeMs")
+            or ""
+        )
+
+    items.sort(key=sort_key, reverse=True)
+
+    files: List[Dict[str, str]] = []
+    for item in items:
+        file_id = item.get("fileId")
+        if not file_id:
+            continue
+        files.append({
+            "fileId": file_id,
+            "mimeType": item.get("mimeType", "image/png"),
+            "session": item.get("session", ""),
+        })
+
+    return files
