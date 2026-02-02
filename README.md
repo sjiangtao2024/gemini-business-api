@@ -279,7 +279,8 @@ Response (includes metadata):
   - `b64_json`：返回纯 base64（无前缀）
   - `url`：返回 `data:` URL（仍然是内联，不落盘）
 - 图片**不落盘**，客户端自行保存即可
-- 如果 Gemini 侧没有返回图片文件，接口返回 `502`（no files）
+- 若 Gemini 侧计算量过大导致图片未生成，接口会重试最多 3 次（每次间隔 3 秒）
+- 如果 Gemini 侧没有返回图片文件或下载结果为空，接口返回 `502`
 
 ### Error Codes
 - `400`: 参数错误（如 `response_format` 非法）

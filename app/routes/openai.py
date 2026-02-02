@@ -371,72 +371,99 @@ async def generate_images(request: ImageGenerationRequest):
     # 选择账号
     account = await account_pool.get_available_account()
 
+    max_attempts = 3
+    retry_delay_seconds = 3
+
     try:
         async with GeminiClient(account) as client:
-            result = await client.send_message_with_retry(
-                message=request.prompt,
-                stream=False,
-                model=request.model,
-            )
-
-            raw_chunks = result.get("raw_data", [])
-            file_ids, session_name = parse_generated_files(raw_chunks)
-            if not session_name:
-                session_name = result.get("conversation_id", "")
-
-            if not file_ids or not session_name:
-                raise HTTPException(
-                    status_code=502,
-                    detail="Image generation returned no files",
+            for attempt in range(1, max_attempts + 1):
+                result = await client.send_message_with_retry(
+                    message=request.prompt,
+                    stream=False,
+                    model=request.model,
                 )
 
-            metadata = await client.list_session_file_metadata(session_name)
+                raw_chunks = result.get("raw_data", [])
+                file_ids, session_name = parse_generated_files(raw_chunks)
+                if not session_name:
+                    session_name = result.get("conversation_id", "")
 
-            response_format = request.response_format or "b64_json"
-            if response_format not in ("b64_json", "url"):
-                raise HTTPException(
-                    status_code=400,
-                    detail="response_format must be 'b64_json' or 'url'",
+                if not file_ids or not session_name:
+                    if attempt < max_attempts:
+                        logger.warning(
+                            "Image generation returned no files (attempt %s/%s), retrying...",
+                            attempt,
+                            max_attempts,
+                        )
+                        await asyncio.sleep(retry_delay_seconds)
+                        continue
+                    raise HTTPException(
+                        status_code=502,
+                        detail="Image generation returned no files",
+                    )
+
+                metadata = await client.list_session_file_metadata(session_name)
+
+                response_format = request.response_format or "b64_json"
+                if response_format not in ("b64_json", "url"):
+                    raise HTTPException(
+                        status_code=400,
+                        detail="response_format must be 'b64_json' or 'url'",
+                    )
+
+                tasks = []
+                for file_info in file_ids[: request.n or 1]:
+                    fid = file_info["fileId"]
+                    meta = metadata.get(fid, {})
+                    mime = meta.get("mimeType", file_info.get("mimeType", "image/png"))
+                    correct_session = meta.get("session") or session_name
+                    tasks.append((fid, mime, client.download_file(correct_session, fid)))
+
+                results = await asyncio.gather(
+                    *[task for _, _, task in tasks],
+                    return_exceptions=True,
                 )
 
-            tasks = []
-            for file_info in file_ids[: request.n or 1]:
-                fid = file_info["fileId"]
-                meta = metadata.get(fid, {})
-                mime = meta.get("mimeType", file_info.get("mimeType", "image/png"))
-                correct_session = meta.get("session") or session_name
-                tasks.append((fid, mime, client.download_file(correct_session, fid)))
+                data_list = []
+                for (fid, mime, _), result_data in zip(tasks, results):
+                    if isinstance(result_data, Exception):
+                        logger.error("Image download failed: %s (%s)", fid, result_data)
+                        continue
 
-            results = await asyncio.gather(
-                *[task for _, _, task in tasks],
-                return_exceptions=True,
-            )
+                    b64_data = base64.b64encode(result_data).decode("utf-8")
+                    metadata = extract_image_metadata(result_data, mime)
+                    if response_format == "url":
+                        data_list.append({
+                            "url": f"data:{mime};base64,{b64_data}",
+                            "revised_prompt": request.prompt,
+                            **metadata,
+                        })
+                    else:
+                        data_list.append({
+                            "b64_json": b64_data,
+                            "revised_prompt": request.prompt,
+                            **metadata,
+                        })
 
-            data_list = []
-            for (fid, mime, _), result_data in zip(tasks, results):
-                if isinstance(result_data, Exception):
-                    logger.error("Image download failed: %s (%s)", fid, result_data)
+                if data_list:
+                    return {
+                        "created": int(time.time()),
+                        "data": data_list,
+                    }
+
+                if attempt < max_attempts:
+                    logger.warning(
+                        "Image download returned empty results (attempt %s/%s), retrying...",
+                        attempt,
+                        max_attempts,
+                    )
+                    await asyncio.sleep(retry_delay_seconds)
                     continue
 
-                b64_data = base64.b64encode(result_data).decode("utf-8")
-                metadata = extract_image_metadata(result_data, mime)
-                if response_format == "url":
-                    data_list.append({
-                        "url": f"data:{mime};base64,{b64_data}",
-                        "revised_prompt": request.prompt,
-                        **metadata,
-                    })
-                else:
-                    data_list.append({
-                        "b64_json": b64_data,
-                        "revised_prompt": request.prompt,
-                        **metadata,
-                    })
-
-            return {
-                "created": int(time.time()),
-                "data": data_list,
-            }
+                raise HTTPException(
+                    status_code=502,
+                    detail="Image generation returned empty results",
+                )
 
     except Exception as e:
         if hasattr(e, "response"):
