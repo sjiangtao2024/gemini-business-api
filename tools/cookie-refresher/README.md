@@ -29,6 +29,8 @@ Required env vars:
 - `IMAP_USER`
 - `IMAP_PASS`
 - `GEMINI_LOGIN_EMAIL`
+- `XSRF_TOKEN` (optional, enables login/email flow)
+- `GRECAPTCHA_TOKEN` (optional)
 
 ## Run Modes
 
@@ -44,4 +46,5 @@ The container includes Google Chrome + Xvfb. Set `DISPLAY=:99` for headed automa
 - Login timeouts raise `RuntimeError("login timeout")`.
 - Sign-in errors raise `RuntimeError("signin error")`.
 - Challenge pages (challenge/denied/blocked) raise `RuntimeError("challenge detected")`.
+- Verification page failures (`verify-oob-code`) raise `RuntimeError("verification failed")`.
 - IMAP code fetch failures raise `ValueError("verification code not found")`.

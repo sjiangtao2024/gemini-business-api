@@ -1,4 +1,5 @@
 from typing import Dict, Any, Callable, Optional
+from urllib.parse import quote
 
 from cookie_refresher.engines.base import build_account_payload
 
@@ -11,10 +12,14 @@ class SeleniumUCEngine:
         code_provider: Callable[[], str],
         driver_factory: Optional[Callable[[], Any]] = None,
         login_url: str = "https://auth.business.gemini.google/login",
+        xsrf_token: str = "",
+        grecaptcha_token: str = "",
     ):
         self.code_provider = code_provider
         self.driver_factory = driver_factory or self._default_driver_factory
         self.login_url = login_url
+        self.xsrf_token = xsrf_token
+        self.grecaptcha_token = grecaptcha_token
 
     def _default_driver_factory(self):
         import undetected_chromedriver as uc
@@ -34,6 +39,8 @@ class SeleniumUCEngine:
                 raise RuntimeError("signin error")
             if self._is_challenge(driver.current_url):
                 raise RuntimeError("challenge detected")
+            if self._is_verification_failed(driver.current_url):
+                raise RuntimeError("verification failed")
             cookies = driver.get_cookies()
             user_agent = driver.execute_script("return navigator.userAgent")
             return build_account_payload(driver.current_url, cookies, user_agent)
@@ -44,7 +51,12 @@ class SeleniumUCEngine:
                 pass
 
     def _login(self, driver, email: str) -> None:
-        driver.get(self.login_url)
+        if self.xsrf_token:
+            driver.get("https://auth.business.gemini.google/")
+            self.prepare_auth_cookies(driver, self.xsrf_token, self.grecaptcha_token)
+            driver.get(self.build_login_url(email, self.xsrf_token))
+        else:
+            driver.get(self.login_url)
         try:
             from selenium.webdriver.common.by import By
             from selenium.webdriver.common.keys import Keys
@@ -78,3 +90,33 @@ class SeleniumUCEngine:
     @staticmethod
     def _is_signin_error(url: str) -> bool:
         return "signin-error" in url.lower()
+
+    @staticmethod
+    def _is_verification_failed(url: str) -> bool:
+        return "verify-oob-code" in url.lower()
+
+    def build_login_url(self, email: str, xsrf_token: str) -> str:
+        login_hint = quote(email, safe="")
+        return (
+            "https://auth.business.gemini.google/login/email"
+            f"?continueUrl=https%3A%2F%2Fbusiness.gemini.google%2F&loginHint={login_hint}"
+            f"&xsrfToken={xsrf_token}"
+        )
+
+    def prepare_auth_cookies(self, driver, xsrf_token: str, grecaptcha_token: str) -> None:
+        if xsrf_token:
+            driver.add_cookie({
+                "name": "__Host-AP_SignInXsrf",
+                "value": xsrf_token,
+                "url": "https://auth.business.gemini.google/",
+                "path": "/",
+                "secure": True,
+            })
+        if grecaptcha_token:
+            driver.add_cookie({
+                "name": "_GRECAPTCHA",
+                "value": grecaptcha_token,
+                "url": "https://google.com",
+                "path": "/",
+                "secure": True,
+            })

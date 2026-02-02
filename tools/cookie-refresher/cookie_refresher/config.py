@@ -12,6 +12,8 @@ class Settings:
     imap_user: Optional[str] = None
     imap_pass: Optional[str] = None
     login_email: Optional[str] = None
+    xsrf_token: Optional[str] = None
+    grecaptcha_token: Optional[str] = None
 
     def __post_init__(self) -> None:
         self.admin_base_url = self.admin_base_url or os.getenv("ADMIN_BASE_URL", "http://localhost:8000")
@@ -21,3 +23,5 @@ class Settings:
         self.imap_user = self.imap_user or os.getenv("IMAP_USER", "")
         self.imap_pass = self.imap_pass or os.getenv("IMAP_PASS", "")
         self.login_email = self.login_email or os.getenv("GEMINI_LOGIN_EMAIL", "")
+        self.xsrf_token = self.xsrf_token or os.getenv("XSRF_TOKEN", "")
+        self.grecaptcha_token = self.grecaptcha_token or os.getenv("GRECAPTCHA_TOKEN", "")

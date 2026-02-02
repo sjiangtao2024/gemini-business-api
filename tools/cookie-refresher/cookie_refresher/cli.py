@@ -29,8 +29,16 @@ def _build_engine(settings: Settings):
     def code_provider():
         return mail_handler.get_verification_code()
 
-    primary = SeleniumUCEngine(code_provider)
-    fallback = DrissionEngine(code_provider)
+    primary = SeleniumUCEngine(
+        code_provider,
+        xsrf_token=settings.xsrf_token,
+        grecaptcha_token=settings.grecaptcha_token,
+    )
+    fallback = DrissionEngine(
+        code_provider,
+        xsrf_token=settings.xsrf_token,
+        grecaptcha_token=settings.grecaptcha_token,
+    )
 
     class OrchestratedEngine:
         def login_and_extract(self, email: str):
