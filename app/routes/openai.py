@@ -381,10 +381,12 @@ async def generate_images(request: ImageGenerationRequest):
     try:
         async with GeminiClient(account) as client:
             for attempt in range(1, max_attempts + 1):
+                # Avoid duplicate generations caused by retries; poll metadata instead.
                 result = await client.send_message_with_retry(
                     message=request.prompt,
                     stream=False,
                     model=request.model,
+                    max_retries=0,
                 )
 
             raw_chunks = result.get("raw_data", [])
@@ -392,22 +394,28 @@ async def generate_images(request: ImageGenerationRequest):
             if not session_name:
                 session_name = result.get("conversation_id", "")
 
-            if not file_ids or not session_name:
-                logger.warning(
-                    "Image generation missing files: files=%s session=%s raw_chunks=%s",
-                    len(file_ids),
-                    session_name,
-                    str(raw_chunks[:2])[:800],
-                )
-                if session_name:
-                    metadata = await client.list_session_file_metadata(session_name)
-                    fallback_files = extract_files_from_metadata(metadata)
-                    if fallback_files:
-                        logger.warning(
-                            "Image generation fallback: using %s files from metadata",
-                            len(fallback_files),
-                        )
-                        file_ids = fallback_files
+                if not file_ids or not session_name:
+                    logger.warning(
+                        "Image generation missing files: files=%s session=%s raw_chunks=%s",
+                        len(file_ids),
+                        session_name,
+                        str(raw_chunks[:2])[:800],
+                    )
+                    if session_name:
+                        # Poll metadata for async image generation completion.
+                        fallback_files = []
+                        for _ in range(10):
+                            metadata = await client.list_session_file_metadata(session_name)
+                            fallback_files = extract_files_from_metadata(metadata)
+                            if fallback_files:
+                                break
+                            await asyncio.sleep(2)
+                        if fallback_files:
+                            logger.warning(
+                                "Image generation fallback: using %s files from metadata",
+                                len(fallback_files),
+                            )
+                            file_ids = fallback_files
                 if upstream_error:
                     raise HTTPException(
                         status_code=502,
