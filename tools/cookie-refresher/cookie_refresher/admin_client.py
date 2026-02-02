@@ -13,5 +13,5 @@ class AdminClient:
         if resp.status_code == 400 and "exists" in resp.text:
             email = payload["email"]
             self.client.delete(f"/admin/accounts/{email}")
-            self.client.post("/admin/accounts", json=payload)
+            resp = self.client.post("/admin/accounts", json=payload)
         resp.raise_for_status()
