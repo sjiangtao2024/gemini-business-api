@@ -76,6 +76,7 @@ class Account:
         self.token_manager = TokenManager(
             team_id=team_id,
             secure_c_ses=secure_c_ses,
+            host_c_oses=host_c_oses,
             csesidx=csesidx,
             user_agent=user_agent,
         )
@@ -88,7 +89,7 @@ class Account:
         self.last_used_at: float = 0
 
     @staticmethod
-    def _parse_timestamp(ts_str: str) -> float:
+    def _parse_timestamp(ts_str: str | int | float) -> float:
         """
         Parse ISO 8601 timestamp to Unix timestamp
 
@@ -98,14 +99,21 @@ class Account:
         Returns:
             float: Unix timestamp (seconds since epoch)
         """
-        if not ts_str:
+        if ts_str is None or ts_str == "":
             return 0
 
-        # Handle 'Z' suffix and '+00:00' timezone
-        ts_str = ts_str.replace("Z", "+00:00")
+        if isinstance(ts_str, (int, float)):
+            return float(ts_str)
 
-        dt = datetime.fromisoformat(ts_str)
-        return dt.timestamp()
+        # Handle 'Z' suffix and '+00:00' timezone for ISO strings
+        ts_str = ts_str.strip().replace("Z", "+00:00")
+
+        try:
+            dt = datetime.fromisoformat(ts_str)
+            return dt.timestamp()
+        except ValueError:
+            # Fall back to unix timestamp in string form
+            return float(ts_str)
 
     def is_expired(self) -> bool:
         """
