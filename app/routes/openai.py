@@ -424,15 +424,15 @@ async def generate_images(request: ImageGenerationRequest):
                 if attempt < max_attempts:
                     logger.warning(
                         "Image generation returned no files (attempt %s/%s), retrying...",
-                            attempt,
-                            max_attempts,
-                        )
-                        await asyncio.sleep(retry_delay_seconds)
-                        continue
-                    raise HTTPException(
-                        status_code=502,
-                        detail="Image generation returned no files",
+                        attempt,
+                        max_attempts,
                     )
+                    await asyncio.sleep(retry_delay_seconds)
+                    continue
+                raise HTTPException(
+                    status_code=502,
+                    detail="Image generation returned no files",
+                )
 
                 metadata = await client.list_session_file_metadata(session_name)
 
