@@ -8,6 +8,7 @@ import asyncio
 import base64
 import logging
 import time
+import httpx
 from typing import List, Optional, Union
 
 from fastapi import APIRouter, HTTPException
@@ -382,12 +383,31 @@ async def generate_images(request: ImageGenerationRequest):
         async with GeminiClient(account) as client:
             for attempt in range(1, max_attempts + 1):
                 # Avoid duplicate generations caused by retries; poll metadata instead.
-                result = await client.send_message_with_retry(
-                    message=request.prompt,
-                    stream=False,
-                    model=request.model,
-                    max_retries=0,
-                )
+                try:
+                    result = await client.send_message_with_retry(
+                        message=request.prompt,
+                        stream=False,
+                        model=request.model,
+                        max_retries=0,
+                    )
+                except httpx.ReadTimeout:
+                    # Generation may still complete; poll metadata from the session.
+                    session_name = client._session_name or ""
+                    if session_name:
+                        fallback_files = []
+                        for _ in range(10):
+                            metadata = await client.list_session_file_metadata(session_name)
+                            fallback_files = extract_files_from_metadata(metadata)
+                            if fallback_files:
+                                file_ids = fallback_files
+                                break
+                            await asyncio.sleep(2)
+                        if file_ids:
+                            result = {"raw_data": [], "conversation_id": session_name}
+                        else:
+                            raise
+                    else:
+                        raise
 
                 raw_chunks = result.get("raw_data", [])
                 file_ids, session_name, upstream_error = parse_generated_files(raw_chunks)

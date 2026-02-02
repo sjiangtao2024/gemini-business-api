@@ -34,7 +34,7 @@ class GeminiClient:
     LIST_SESSION_FILES_API = "/v1alpha/locations/global/widgetListSessionFileMetadata"
 
     # Request configuration
-    TIMEOUT = 90.0  # 90 seconds (image generation can be slow)
+    TIMEOUT = 120.0  # 120 seconds (image generation can be slow)
     MAX_RETRIES = 3
     VIRTUAL_MODELS = {
         "gemini-imagen": {"imageGenerationSpec": {}},
@@ -65,7 +65,7 @@ class GeminiClient:
         """Ensure HTTP client is initialized"""
         if self._client is None:
             self._client = httpx.AsyncClient(
-                timeout=self.TIMEOUT,
+                timeout=httpx.Timeout(self.TIMEOUT, connect=30.0),
                 follow_redirects=True,
             )
 
