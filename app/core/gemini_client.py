@@ -36,6 +36,10 @@ class GeminiClient:
     # Request configuration
     TIMEOUT = 30.0  # 30 seconds
     MAX_RETRIES = 3
+    VIRTUAL_MODELS = {
+        "gemini-imagen": {"imageGenerationSpec": {}},
+        "gemini-veo": {"videoGenerationSpec": {}},
+    }
 
     def __init__(self, account: Account):
         """
@@ -197,12 +201,17 @@ class GeminiClient:
         model_name = kwargs.get("model", "gemini-2.5-flash")
 
         # 工具配置
-        tools_spec = {
-            "webGroundingSpec": {},
-            "toolRegistry": "default_tool_registry",
-            "imageGenerationSpec": {},
-            "videoGenerationSpec": {}
-        }
+        if model_name in self.VIRTUAL_MODELS:
+            tools_spec = self.VIRTUAL_MODELS[model_name]
+            model_id_for_config = None
+        else:
+            tools_spec = {
+                "webGroundingSpec": {},
+                "toolRegistry": "default_tool_registry",
+                "imageGenerationSpec": {},
+                "videoGenerationSpec": {}
+            }
+            model_id_for_config = model_name
 
         payload = {
             "configId": self.account.team_id,
@@ -221,9 +230,9 @@ class GeminiClient:
         }
 
         # 添加模型配置
-        if model_name:
+        if model_id_for_config:
             payload["streamAssistRequest"]["assistGenerationConfig"] = {
-                "modelId": model_name
+                "modelId": model_id_for_config
             }
 
         # Send request
